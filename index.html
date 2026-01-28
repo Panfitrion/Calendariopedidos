@@ -585,9 +585,15 @@
 
     .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 24px;
       margin-top: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .dashboard-card {
@@ -962,12 +968,13 @@
       <h2 style="font-size: 32px; font-weight: 700; margin-bottom: 8px;">📊 Dashboard General</h2>
       <p style="color: var(--text-secondary); margin-bottom: 24px;">Resumen de todas las cafeterías</p>
 
-      <div class="date-selector">
-        <span class="date-selector-label">📅 Rango de fechas:</span>
-        <input type="date" id="dashboardStartDate" class="form-input" style="max-width: 180px; min-height: 44px;">
-        <span style="color: var(--text-secondary); font-weight: 600;">a</span>
-        <input type="date" id="dashboardEndDate" class="form-input" style="max-width: 180px; min-height: 44px;">
-        <button class="btn-primary" onclick="app.loadDashboardData()" style="padding: 10px 20px; min-height: 44px;">🔄 Actualizar</button>
+      <div class="date-selector" style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+        <button class="icon-btn" onclick="app.changeDashboardWeek(-1)" style="width: 44px; height: 44px; font-size: 18px;" title="Semana anterior">←</button>
+        <div class="week-selector-badge" id="dashboardWeekRange" onclick="app.resetDashboardWeek()" style="cursor: pointer; padding: 12px 20px; background: var(--surface); border: 2px solid var(--border); border-radius: 10px; font-size: 14px; font-weight: 600;">
+          Cargando...
+        </div>
+        <button class="icon-btn" onclick="app.changeDashboardWeek(1)" style="width: 44px; height: 44px; font-size: 18px;" title="Semana siguiente">→</button>
+        <span style="color: var(--text-secondary); font-size: 13px; font-weight: 500;">(Lunes a Sábado)</span>
       </div>
 
       <div id="dashboardContent">
@@ -1798,13 +1805,13 @@
         this.currentOrders = {};
         this.currentReturns = {};
         this.weekOffset = 0; // Offset de semanas (0 = semana actual, -1 = semana anterior, +1 = siguiente)
+        this.dashboardWeekOffset = 0; // Offset de semanas para dashboard (siempre Lunes-Sábado)
         this.init();
       }
 
       async init() {
         await this.renderClients();
         this.setupEventListeners();
-        this.loadGlobalDates();
         this.showView('clientsView');
         this.updateConnectionStatus();
         
@@ -1852,18 +1859,29 @@
         await this.loadDashboardData();
       }
 
+      async changeDashboardWeek(direction) {
+        this.dashboardWeekOffset += direction;
+        await this.loadDashboardData();
+      }
+
+      async resetDashboardWeek() {
+        this.dashboardWeekOffset = 0;
+        await this.loadDashboardData();
+      }
+
       async loadDashboardData() {
-        const startDate = document.getElementById('dashboardStartDate').value;
-        const endDate = document.getElementById('dashboardEndDate').value;
+        // Usar weekOffset con rango Lunes-Sábado
+        const { start, end } = OrderManager.getWeekDates('mon-sat', this.dashboardWeekOffset);
+        const startDate = this.formatDateForDB(start);
+        const endDate = this.formatDateForDB(end);
         
-        if (!startDate || !endDate) {
-          // Inicializar con últimos 7 días si no hay fechas
-          const today = new Date();
-          const weekAgo = new Date(today);
-          weekAgo.setDate(weekAgo.getDate() - 7);
-          document.getElementById('dashboardStartDate').value = weekAgo.toISOString().split('T')[0];
-          document.getElementById('dashboardEndDate').value = today.toISOString().split('T')[0];
-          return this.loadDashboardData();
+        // Actualizar badge
+        document.getElementById('dashboardWeekRange').textContent = 
+          `${OrderManager.formatDate(start)} - ${OrderManager.formatDate(end)}`;
+        
+        if (this.dashboardWeekOffset !== 0) {
+          const weekText = this.dashboardWeekOffset < 0 ? `${Math.abs(this.dashboardWeekOffset)} sem. atrás` : `${this.dashboardWeekOffset} sem. adelante`;
+          document.getElementById('dashboardWeekRange').textContent += ` (${weekText})`;
         }
 
         const clients = await this.store.getClients();
@@ -1874,71 +1892,178 @@
           return;
         }
 
-        let totalVendidos = 0;
-        let totalRegresados = 0;
         const productoStats = {};
 
+        // Primero, inicializar todos los productos de todas las cafeterías con 0
+        for (const client of clients) {
+          client.products.forEach(product => {
+            // Normalizar nombre de producto
+            const normalizedName = product.name.toLowerCase()
+              .replace(/almenra/g, 'almendra')
+              .replace(/hogaza\s*multigrano/gi, 'hogaza multigrano')
+              .replace(/demibaguette/gi, 'demi baguette')
+              .replace(/demi-baguette/gi, 'demi baguette')
+              .replace(/ciabattta/gi, 'ciabatta')
+              .replace(/croissanr/gi, 'croissant')
+              .replace(/\s+/g, ' ')
+              .trim();
+            
+            console.log(`Producto original: "${product.name}" -> normalizado: "${normalizedName}"`);
+            
+            // Para ciertos productos, mantener separado por cafetería
+            const productosPorCafeteria = ['ciabatta', 'focaccia'];
+            const key = productosPorCafeteria.includes(normalizedName) 
+              ? `${normalizedName}|${client.name}` 
+              : normalizedName;
+            
+            if (!productoStats[key]) {
+              productoStats[key] = {
+                nombre: normalizedName.charAt(0).toUpperCase() + normalizedName.slice(1),
+                cafeteria: productosPorCafeteria.includes(normalizedName) ? client.name : null,
+                vendidos: 0
+              };
+            }
+          });
+        }
+
+        // Luego, sumar los vendidos
         for (const client of clients) {
           const orders = await this.store.getOrders(client.id, startDate, endDate) || {};
-          const returns = await this.store.getReturns(client.id, startDate, endDate) || {};
+
+          console.log(`Dashboard - ${client.name}:`, {
+            startDate,
+            endDate,
+            orders
+          });
 
           // Contar vendidos (orders es un objeto: {productName: {fecha: cantidad}})
           Object.keys(orders).forEach(productName => {
+            // Normalizar nombre de producto
+            const normalizedName = productName.toLowerCase()
+              .replace(/almenra/g, 'almendra')
+              .replace(/hogaza\s+multigrano/g, 'hogaza multigrano')
+              .replace(/demibaguette/g, 'demi baguette')
+              .replace(/demi-baguette/g, 'demi baguette')
+              .replace(/ciabattta/gi, 'ciabatta')
+              .replace(/croissanr/gi, 'croissant')
+              .replace(/\s+/g, ' ')
+              .trim();
+            
+            const productosPorCafeteria = ['ciabatta', 'focaccia'];
+            const key = productosPorCafeteria.includes(normalizedName) 
+              ? `${normalizedName}|${client.name}` 
+              : normalizedName;
+            
             const dates = orders[productName];
             Object.keys(dates).forEach(fecha => {
-              const cantidad = dates[fecha];
-              totalVendidos += cantidad;
+              const cantidad = parseInt(dates[fecha]) || 0;
               
-              const productKey = `${client.id}-${productName}`;
-              if (!productoStats[productKey]) {
-                productoStats[productKey] = {
-                  nombre: productName,
-                  cafeteria: client.name,
-                  vendidos: 0,
-                  regresados: 0
-                };
+              if (productoStats[key]) {
+                productoStats[key].vendidos += cantidad;
               }
-              productoStats[productKey].vendidos += cantidad;
-            });
-          });
-
-          // Contar regresados (returns es un objeto: {productName: {fecha: cantidad}})
-          Object.keys(returns).forEach(productName => {
-            const dates = returns[productName];
-            Object.keys(dates).forEach(fecha => {
-              const cantidad = dates[fecha];
-              totalRegresados += cantidad;
               
-              const productKey = `${client.id}-${productName}`;
-              if (!productoStats[productKey]) {
-                productoStats[productKey] = {
-                  nombre: productName,
-                  cafeteria: client.name,
-                  vendidos: 0,
-                  regresados: 0
-                };
-              }
-              productoStats[productKey].regresados += cantidad;
+              console.log(`  ${productName} en ${fecha}: +${cantidad} (total: ${productoStats[key]?.vendidos || 0})`);
             });
           });
         }
 
-        // Renderizar tarjetas por producto
+        console.log('Stats finales:', productoStats);
+        console.log('Keys en productoStats:', Object.keys(productoStats));
+
+        // Definir grupos de productos
+        const grupos = [
+          {
+            nombre: 'Viennoiserie',
+            productos: ['croissant', 'chocolatín']
+          },
+          {
+            nombre: 'Panes',
+            productos: ['baguette', 'demi baguette', 'hogaza', 'hogaza multigrano']
+          },
+          {
+            nombre: 'Panes Especiales',
+            productos: ['focaccia', 'ciabatta']
+          },
+          {
+            nombre: 'Cajas y Bollos',
+            productos: ['caja blanco', 'caja multigrano', 'brioche', 'bollo']
+          }
+        ];
+
+        // Renderizar tarjetas por producto agrupadas
         let html = '';
-        
-        // Agregar tarjetas por producto
-        Object.keys(productoStats).forEach(prodKey => {
-          const stat = productoStats[prodKey];
-          const neto = stat.vendidos - stat.regresados;
+        const productosUsados = new Set();
+
+        // Renderizar cada grupo
+        grupos.forEach(grupo => {
+          // Verificar si hay productos en este grupo (considerando variantes con |cafeteria)
+          const productosDelGrupo = grupo.productos.filter(prodKey => {
+            return Object.keys(productoStats).some(key => key.split('|')[0] === prodKey);
+          });
+          
+          if (productosDelGrupo.length > 0) {
+            html += `
+              <div style="grid-column: 1/-1; margin-top: 24px; margin-bottom: 12px;">
+                <div style="border-bottom: 2px solid var(--border);"></div>
+              </div>
+            `;
+            
+            grupo.productos.forEach(prodKey => {
+              // Buscar productos que coincidan (pueden tener |cafeteria)
+              const matchingKeys = Object.keys(productoStats).filter(key => {
+                const baseName = key.split('|')[0];
+                const normalizedBase = baseName.toLowerCase().trim();
+                const normalizedSearch = prodKey.toLowerCase().trim();
+                return normalizedBase === normalizedSearch;
+              });
+              
+              console.log(`Grupo ${grupo.nombre}, buscando "${prodKey}", encontrados:`, matchingKeys);
+              
+              matchingKeys.forEach(key => {
+                const stat = productoStats[key];
+                productosUsados.add(key);
+                
+                console.log(`  Marcando como usado: "${key}"`);
+                
+                html += `
+                  <div class="dashboard-card">
+                    <div class="dashboard-card-title">${stat.nombre}</div>
+                    ${stat.cafeteria ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${stat.cafeteria}</div>` : ''}
+                    <div class="dashboard-card-value">${stat.vendidos}</div>
+                  </div>
+                `;
+              });
+            });
+          }
+        });
+
+        // Renderizar productos restantes (otros)
+        const productosRestantes = Object.keys(productoStats)
+          .filter(p => !productosUsados.has(p))
+          .sort();
+
+        console.log('Productos usados:', Array.from(productosUsados));
+        console.log('Productos restantes:', productosRestantes);
+
+        if (productosRestantes.length > 0) {
           html += `
-            <div class="dashboard-card">
-              <div class="dashboard-card-icon">🥐</div>
-              <div class="dashboard-card-title">${stat.nombre}</div>
-              <div class="dashboard-card-value">${stat.vendidos}</div>
-              <div class="dashboard-card-subtitle">${stat.cafeteria} · ${stat.regresados} regresados · ${neto} neto</div>
+            <div style="grid-column: 1/-1; margin-top: 24px; margin-bottom: 12px;">
+              <div style="border-bottom: 2px solid var(--border);"></div>
             </div>
           `;
-        });
+          
+          productosRestantes.forEach(prodKey => {
+            const stat = productoStats[prodKey];
+            
+            html += `
+              <div class="dashboard-card">
+                <div class="dashboard-card-title">${stat.nombre}</div>
+                ${stat.cafeteria ? `<div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${stat.cafeteria}</div>` : ''}
+                <div class="dashboard-card-value">${stat.vendidos}</div>
+              </div>
+            `;
+          });
+        }
 
         if (html === '') {
           html = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">No hay datos en el rango seleccionado</p>';
@@ -1952,32 +2077,6 @@
           e.preventDefault();
           this.saveClient();
         });
-        
-        document.getElementById('globalDateStart').addEventListener('change', () => {
-          this.saveGlobalDates();
-        });
-        
-        document.getElementById('globalDateEnd').addEventListener('change', () => {
-          this.saveGlobalDates();
-        });
-      }
-
-      loadGlobalDates() {
-        const globalRange = this.store.data.globalDateRange || {};
-        if (globalRange.start) {
-          document.getElementById('globalDateStart').value = globalRange.start;
-        }
-        if (globalRange.end) {
-          document.getElementById('globalDateEnd').value = globalRange.end;
-        }
-      }
-
-      saveGlobalDates() {
-        this.store.data.globalDateRange = {
-          start: document.getElementById('globalDateStart').value,
-          end: document.getElementById('globalDateEnd').value
-        };
-        this.store.save();
       }
 
       getContrastColor(hexColor) {
