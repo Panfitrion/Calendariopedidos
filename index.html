@@ -2597,6 +2597,8 @@
                   <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">Pedido</label>
                   <input type="number" 
                          class="qty-input" 
+                         inputmode="numeric"
+                         pattern="[0-9]*"
                          value="${orderQty}" 
                          onchange="app.updateMobileOrder('${product.id}', '${selectedDate}', this.value, 'order')"
                          style="width: 100%; min-height: 70px; font-size: 28px; text-align: center; padding: 16px; border: 3px solid var(--border); border-radius: 12px;">
@@ -2606,6 +2608,8 @@
                   <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 6px;">↩️ Regresado</label>
                   <input type="number" 
                          class="qty-input" 
+                         inputmode="numeric"
+                         pattern="[0-9]*"
                          value="${returnQty}" 
                          onchange="app.updateMobileOrder('${product.id}', '${selectedDate}', this.value, 'return')"
                          style="width: 100%; min-height: 70px; font-size: 28px; text-align: center; padding: 16px; border: 3px solid var(--danger); border-radius: 12px;">
