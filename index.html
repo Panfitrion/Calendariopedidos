@@ -1945,6 +1945,8 @@
         this.currentReturns = {};
         this.weekOffset = 0; // Offset de semanas (0 = semana actual, -1 = semana anterior, +1 = siguiente)
         this.dashboardWeekOffset = 0; // Offset de semanas para dashboard (siempre Lunes-Sábado)
+        this.syncInterval = null; // Intervalo para sincronización automática
+        this.lastSyncTime = Date.now();
         this.init();
       }
 
@@ -1957,6 +1959,61 @@
         
         // Inicializar y cargar dashboard
         await this.loadDashboardData();
+        
+        // Iniciar sincronización automática si usa Supabase
+        if (USE_SUPABASE) {
+          this.startAutoSync();
+        }
+      }
+
+      startAutoSync() {
+        // Sincronizar cada 30 segundos
+        this.syncInterval = setInterval(async () => {
+          await this.checkForUpdates();
+        }, 30000);
+        
+        // También sincronizar cuando la ventana recupera el foco
+        window.addEventListener('focus', async () => {
+          await this.checkForUpdates();
+        });
+      }
+
+      async checkForUpdates() {
+        try {
+          // Obtener timestamp de última modificación de productos
+          const { data: productos } = await supabaseClient
+            .from('productos')
+            .select('created_at, updated_at')
+            .order('updated_at', { ascending: false })
+            .limit(1);
+          
+          if (productos && productos.length > 0) {
+            const lastUpdate = new Date(productos[0].updated_at || productos[0].created_at).getTime();
+            
+            // Si hay cambios desde la última sincronización
+            if (lastUpdate > this.lastSyncTime) {
+              console.log('🔄 Detectados cambios en productos, actualizando...');
+              await this.renderClients();
+              await this.renderMobileCafesList();
+              
+              // Si estamos en el dashboard, actualizarlo también
+              const currentView = document.querySelector('.view.active');
+              if (currentView && currentView.id === 'clientsView') {
+                await this.loadDashboardData();
+              }
+              
+              // Si tenemos un cliente abierto, recargarlo
+              if (this.currentClientIndex !== null) {
+                console.log('🔄 Recargando vista de pedidos...');
+                await this.openOrders(this.currentClientIndex);
+              }
+              
+              this.lastSyncTime = Date.now();
+            }
+          }
+        } catch (error) {
+          console.error('Error en sincronización automática:', error);
+        }
       }
 
       updateConnectionStatus() {
