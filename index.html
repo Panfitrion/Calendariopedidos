@@ -2809,10 +2809,13 @@
         if (this.tabletRefreshInterval) {
           clearInterval(this.tabletRefreshInterval);
         }
-        this.tabletRefreshInterval = setInterval(() => {
-          const updatedClient = this.store.getClients()[this.currentClientIndex];
-          this.renderTabletTable(updatedClient);
-          this.updateTabletTotals(updatedClient);
+        this.tabletRefreshInterval = setInterval(async () => {
+          const updatedClients = await this.store.getClients();
+          const updatedClient = updatedClients[this.currentClientIndex];
+          if (updatedClient) {
+            await this.renderTabletTable(updatedClient);
+            await this.updateTabletTotals(updatedClient);
+          }
         }, 3000);
       }
 
@@ -2897,8 +2900,24 @@
         const net = Math.max(0, gross - returns);
         const totals = { gross, returns, net };
         
+        // Construir estructura de datos para el canvas
+        const canvasData = {};
+        client.products.forEach(product => {
+          canvasData[product.name] = {};
+        });
+        
+        // Llenar con los datos de pedidos
+        for (const productName in orders) {
+          if (!canvasData[productName]) canvasData[productName] = {};
+          for (const fecha in orders[productName]) {
+            const dayOfWeek = new Date(fecha).toLocaleDateString('es', { weekday: 'short' });
+            const dayKey = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
+            canvasData[productName][dayKey] = orders[productName][fecha];
+          }
+        }
+        
         try {
-          const canvas = await this.generateClientCanvas(client, startFormatted, endFormatted, totals);
+          const canvas = await this.generateClientCanvas(client, startFormatted, endFormatted, totals, canvasData);
           const imageData = canvas.toDataURL('image/png');
           
           const a = document.createElement('a');
@@ -3020,6 +3039,8 @@
           }
         } catch (error) {
           console.error('Error al calcular totales tablet:', error);
+          // No actualizar los totales si hay error, mantener los valores actuales
+          return;
         }
 
         const net = Math.max(0, gross - returns);
@@ -3722,7 +3743,7 @@
 
       async generateClientCanvas(client, startFormatted, endFormatted, totals, customData = null) {
         const days = OrderManager.getWeekDays(client.weekRange);
-        const data = customData || client.currentWeek.data;
+        const data = customData || (client.currentWeek && client.currentWeek.data) || {};
         
         const wrapText = (ctx, text, maxWidth) => {
           const words = text.split(' ');
