@@ -2932,21 +2932,49 @@
         try {
           const canvas = await this.generateClientCanvas(client, startFormatted, endFormatted, totals, canvasData);
           
-          // Convertir canvas a Blob en lugar de data URL para evitar restricciones del navegador
-          canvas.toBlob((blob) => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${client.name} ${startFormatted}-${endFormatted}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+          canvas.toBlob(async (blob) => {
+            const fileName = `${client.name} ${startFormatted}-${endFormatted}.png`;
+            
+            // Intentar usar File System Access API si está disponible (Chrome/Edge)
+            if ('showSaveFilePicker' in window) {
+              try {
+                const handle = await window.showSaveFilePicker({
+                  suggestedName: fileName,
+                  types: [{
+                    description: 'PNG Image',
+                    accept: { 'image/png': ['.png'] }
+                  }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+              } catch (err) {
+                if (err.name !== 'AbortError') {
+                  console.error('Error al guardar:', err);
+                  // Fallback al método tradicional
+                  this.downloadBlobFallback(blob, fileName);
+                }
+              }
+            } else {
+              // Fallback para navegadores que no soportan File System Access API
+              this.downloadBlobFallback(blob, fileName);
+            }
           }, 'image/png');
         } catch (error) {
           console.error('Error al generar PNG:', error);
           alert('Error al generar PNG: ' + error.message);
         }
+      }
+
+      downloadBlobFallback(blob, fileName) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
 
       async renderTabletTable(client) {
@@ -3453,15 +3481,31 @@
         
         const canvas = await this.generateClientCanvas(client, week.start, week.end, week.totals, week.data);
         
-        canvas.toBlob((blob) => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${client.name} ${week.start}-${week.end}.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
+        canvas.toBlob(async (blob) => {
+          const fileName = `${client.name} ${week.start}-${week.end}.png`;
+          
+          // Intentar usar File System Access API si está disponible
+          if ('showSaveFilePicker' in window) {
+            try {
+              const handle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{
+                  description: 'PNG Image',
+                  accept: { 'image/png': ['.png'] }
+                }]
+              });
+              const writable = await handle.createWritable();
+              await writable.write(blob);
+              await writable.close();
+            } catch (err) {
+              if (err.name !== 'AbortError') {
+                console.error('Error al guardar:', err);
+                this.downloadBlobFallback(blob, fileName);
+              }
+            }
+          } else {
+            this.downloadBlobFallback(blob, fileName);
+          }
         }, 'image/png');
       }
 
@@ -3692,73 +3736,171 @@
       }
 
       async exportAllPDF() {
-        const clients = this.store.getClients();
+        const clients = await this.store.getClients();
         
         if (clients.length === 0) {
           alert('No hay cafeterías para exportar');
           return;
         }
 
-        let generalStart, generalEnd;
-        const globalRange = this.store.data.globalDateRange || {};
-        
-        if (globalRange.start && globalRange.end) {
-          generalStart = new Date(globalRange.start + 'T00:00:00');
-          generalEnd = new Date(globalRange.end + 'T00:00:00');
-        } else {
-          const firstClient = clients[0];
-          
-          if (firstClient.customDateRange && firstClient.customDateRange.start && firstClient.customDateRange.end) {
-            generalStart = new Date(firstClient.customDateRange.start + 'T00:00:00');
-            generalEnd = new Date(firstClient.customDateRange.end + 'T00:00:00');
-          } else {
-            const dates = OrderManager.getWeekDates(firstClient.weekRange);
-            generalStart = dates.start;
-            generalEnd = dates.end;
-          }
-        }
-
+        // Usar las fechas de la semana actual de la primera cafetería
+        const firstClient = clients[0];
+        const { start: generalStart, end: generalEnd } = OrderManager.getWeekDates(firstClient.weekRange, this.weekOffset);
         const folderName = `${OrderManager.formatDate(generalStart)}-${OrderManager.formatDate(generalEnd)}`;
-        const zip = new JSZip();
-        const folder = zip.folder(folderName);
 
+        // Intentar usar File System Access API para guardar en una carpeta
+        if ('showDirectoryPicker' in window) {
+          try {
+            const dirHandle = await window.showDirectoryPicker();
+            
+            for (let i = 0; i < clients.length; i++) {
+              const client = clients[i];
+              
+              // Obtener fechas de la semana para esta cafetería
+              const { start: clientStart, end: clientEnd } = OrderManager.getWeekDates(client.weekRange, this.weekOffset);
+              const startFormatted = OrderManager.formatDate(clientStart);
+              const endFormatted = OrderManager.formatDate(clientEnd);
+              const startStr = this.formatDateForDB(clientStart);
+              const endStr = this.formatDateForDB(clientEnd);
+              
+              // Calcular totales desde Supabase
+              let gross = 0;
+              let returns = 0;
+              
+              if (USE_SUPABASE && client.id) {
+                const orders = await this.store.getOrders(client.id, startStr, endStr) || {};
+                
+                for (const productName in orders) {
+                  const product = client.products.find(p => 
+                    p.name.toLowerCase().trim() === productName.toLowerCase().trim()
+                  );
+                  if (product) {
+                    for (const fecha in orders[productName]) {
+                      const cantidad = parseInt(orders[productName][fecha]) || 0;
+                      gross += cantidad * product.price;
+                    }
+                  }
+                }
+                
+                if (client.allowReturns) {
+                  const returnsData = await this.store.getReturns(client.id, startStr, endStr) || {};
+                  for (const productName in returnsData) {
+                    const product = client.products.find(p => 
+                      p.name.toLowerCase().trim() === productName.toLowerCase().trim()
+                    );
+                    if (product) {
+                      const isReturnable = product.name.toLowerCase().includes('croissant') || 
+                                           product.name.toLowerCase().includes('chocolatín');
+                      if (isReturnable) {
+                        for (const fecha in returnsData[productName]) {
+                          const cantidad = parseInt(returnsData[productName][fecha]) || 0;
+                          returns += cantidad * product.price;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              
+              const net = Math.max(0, gross - returns);
+              const totals = { gross, returns, net };
+              
+              const canvas = await this.generateClientCanvas(client, startFormatted, endFormatted, totals);
+              const fileName = `${client.name} ${startFormatted}-${endFormatted}.png`;
+              
+              // Convertir canvas a blob y guardar en la carpeta seleccionada
+              await new Promise((resolve) => {
+                canvas.toBlob(async (blob) => {
+                  const fileHandle = await dirHandle.getFileHandle(fileName, { create: true });
+                  const writable = await fileHandle.createWritable();
+                  await writable.write(blob);
+                  await writable.close();
+                  resolve();
+                }, 'image/png');
+              });
+            }
+            
+            alert(`✅ ${clients.length} archivos exportados correctamente`);
+          } catch (err) {
+            if (err.name === 'AbortError') {
+              return; // Usuario canceló
+            }
+            console.error('Error al exportar:', err);
+            alert('⚠️ Tu navegador no soporta esta función o no diste permisos.\n\nUsando método alternativo (descarga múltiple)...');
+            await this.exportAllPDFFallback(clients);
+          }
+        } else {
+          // Fallback: descargar archivos uno por uno
+          await this.exportAllPDFFallback(clients);
+        }
+      }
+
+      async exportAllPDFFallback(clients) {
+        const firstClient = clients[0];
+        const { start: generalStart } = OrderManager.getWeekDates(firstClient.weekRange, this.weekOffset);
+        
         for (let i = 0; i < clients.length; i++) {
           const client = clients[i];
-          OrderManager.initWeekStructure(client);
           
-          let clientStart, clientEnd;
-          if (client.customDateRange && client.customDateRange.start && client.customDateRange.end) {
-            clientStart = new Date(client.customDateRange.start + 'T00:00:00');
-            clientEnd = new Date(client.customDateRange.end + 'T00:00:00');
-          } else {
-            const dates = OrderManager.getWeekDates(client.weekRange);
-            clientStart = dates.start;
-            clientEnd = dates.end;
-          }
-
+          const { start: clientStart, end: clientEnd } = OrderManager.getWeekDates(client.weekRange, this.weekOffset);
           const startFormatted = OrderManager.formatDate(clientStart);
           const endFormatted = OrderManager.formatDate(clientEnd);
-          const totals = OrderManager.calculateTotals(client);
+          const startStr = this.formatDateForDB(clientStart);
+          const endStr = this.formatDateForDB(clientEnd);
+          
+          let gross = 0;
+          let returns = 0;
+          
+          if (USE_SUPABASE && client.id) {
+            const orders = await this.store.getOrders(client.id, startStr, endStr) || {};
+            
+            for (const productName in orders) {
+              const product = client.products.find(p => 
+                p.name.toLowerCase().trim() === productName.toLowerCase().trim()
+              );
+              if (product) {
+                for (const fecha in orders[productName]) {
+                  const cantidad = parseInt(orders[productName][fecha]) || 0;
+                  gross += cantidad * product.price;
+                }
+              }
+            }
+            
+            if (client.allowReturns) {
+              const returnsData = await this.store.getReturns(client.id, startStr, endStr) || {};
+              for (const productName in returnsData) {
+                const product = client.products.find(p => 
+                  p.name.toLowerCase().trim() === productName.toLowerCase().trim()
+                );
+                if (product) {
+                  const isReturnable = product.name.toLowerCase().includes('croissant') || 
+                                       product.name.toLowerCase().includes('chocolatín');
+                  if (isReturnable) {
+                    for (const fecha in returnsData[productName]) {
+                      const cantidad = parseInt(returnsData[productName][fecha]) || 0;
+                      returns += cantidad * product.price;
+                    }
+                  }
+                }
+              }
+            }
+          }
+          
+          const net = Math.max(0, gross - returns);
+          const totals = { gross, returns, net };
           
           const canvas = await this.generateClientCanvas(client, startFormatted, endFormatted, totals);
-          const imageData = canvas.toDataURL('image/png');
-          const base64Data = imageData.split(',')[1];
-          
           const fileName = `${client.name} ${startFormatted}-${endFormatted}.png`;
-          folder.file(fileName, base64Data, {base64: true});
+          
+          await new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+              this.downloadBlobFallback(blob, fileName);
+              setTimeout(resolve, 300); // Pequeño delay entre descargas
+            }, 'image/png');
+          });
         }
-
-        const content = await zip.generateAsync({type: 'blob'});
-        const url = URL.createObjectURL(content);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${folderName}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
         
-        alert('✅ Carpeta exportada correctamente');
+        alert(`✅ ${clients.length} archivos descargados`);
       }
 
       async generateClientCanvas(client, startFormatted, endFormatted, totals, customData = null) {
