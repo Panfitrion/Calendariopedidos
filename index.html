@@ -2846,9 +2846,11 @@
         // Calcular totales
         let gross = 0;
         let returns = 0;
+        let orders = {};
+        let returnsData = {};
 
         try {
-          const orders = await this.store.getOrders(client.id, startStr, endStr) || {};
+          orders = await this.store.getOrders(client.id, startStr, endStr) || {};
           
           for (const productName in orders) {
             const product = client.products.find(p => {
@@ -2869,7 +2871,7 @@
           }
 
           if (client.allowReturns) {
-            const returnsData = await this.store.getReturns(client.id, startStr, endStr) || {};
+            returnsData = await this.store.getReturns(client.id, startStr, endStr) || {};
             
             for (const productName in returnsData) {
               const product = client.products.find(p => {
