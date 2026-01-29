@@ -2908,26 +2908,41 @@
           canvasData[product.name] = {};
         });
         
+        // Mapeo de días cortos a días completos
+        const dayMap = {
+          'lun': 'Lunes',
+          'mar': 'Martes',
+          'mié': 'Miércoles',
+          'jue': 'Jueves',
+          'vie': 'Viernes',
+          'sáb': 'Sábado',
+          'dom': 'Domingo'
+        };
+        
         // Llenar con los datos de pedidos
         for (const productName in orders) {
           if (!canvasData[productName]) canvasData[productName] = {};
           for (const fecha in orders[productName]) {
-            const dayOfWeek = new Date(fecha).toLocaleDateString('es', { weekday: 'short' });
-            const dayKey = dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1);
+            const dayOfWeekShort = new Date(fecha).toLocaleDateString('es', { weekday: 'short' }).toLowerCase();
+            const dayKey = dayMap[dayOfWeekShort] || 'Lunes';
             canvasData[productName][dayKey] = orders[productName][fecha];
           }
         }
         
         try {
           const canvas = await this.generateClientCanvas(client, startFormatted, endFormatted, totals, canvasData);
-          const imageData = canvas.toDataURL('image/png');
           
-          const a = document.createElement('a');
-          a.href = imageData;
-          a.download = `${client.name} ${startFormatted}-${endFormatted}.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          // Convertir canvas a Blob en lugar de data URL para evitar restricciones del navegador
+          canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${client.name} ${startFormatted}-${endFormatted}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 'image/png');
         } catch (error) {
           console.error('Error al generar PNG:', error);
           alert('Error al generar PNG: ' + error.message);
@@ -3437,14 +3452,17 @@
         if (!week) return;
         
         const canvas = await this.generateClientCanvas(client, week.start, week.end, week.totals, week.data);
-        const imageData = canvas.toDataURL('image/png');
         
-        const a = document.createElement('a');
-        a.href = imageData;
-        a.download = `${client.name} ${week.start}-${week.end}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${client.name} ${week.start}-${week.end}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 'image/png');
       }
 
       deleteHistoryWeek(historyIndex) {
@@ -3770,7 +3788,10 @@
         rows.push(['Producto', ...days, 'Total']);
         
         client.products.forEach(product => {
-          if (!data[product.name]) return;
+          // No saltar productos, solo inicializar con datos vacíos si no existen
+          if (!data[product.name]) {
+            data[product.name] = {};
+          }
           
           const row = [product.name];
           let weekTotal = 0;
@@ -3778,7 +3799,7 @@
           days.forEach(day => {
             const qty = data[product.name][day] || 0;
             row.push(String(qty));
-            weekTotal += qty;
+            weekTotal += parseInt(qty) || 0;
           });
           
           row.push(String(weekTotal));
