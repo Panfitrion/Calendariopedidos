@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="es-MX">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-
 <body>
     <!-- Fullscreen Cash View -->
     <div id="pantallaEfectivo" class="modal hidden">
@@ -28,7 +26,6 @@
                         Cambio: $<span id="pantallaEfectivoCambio">0.00</span>
                     </div>
                 </div>
-
                 <div class="billetes-grid"
                     style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
                     <!-- Dynamically filled -->
@@ -37,7 +34,6 @@
                     style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
                     <!-- Dynamically filled -->
                 </div>
-
                 <div style="display: flex; gap: 10px;">
                     <button class="win-btn w-100" onclick="pantallaEfectivoReset()">Limpiar</button>
                     <button class="win-btn w-100" style="background: #28a745; color: white;"
@@ -47,7 +43,6 @@
             </div>
         </div>
     </div>
-
     <div class="app-wrapper">
         <!-- SIDEBAR -->
         <aside class="sidebar">
@@ -60,27 +55,23 @@
                 <button class="win-btn menu-item" onclick="abrirModalVentaManual()">💸 Venta Manual</button>
                 <button class="win-btn menu-item" onclick="abrirModalRetiro()">💶 Retirar Efectivo</button>
                 <button class="win-btn menu-item" onclick="abrirModalIngreso()">💵 Ingresar Efectivo</button>
-
                 <div class="win-label">Administración</div>
                 <button class="win-btn menu-item" onclick="abrirModalProductos()">📦 Catálogo</button>
                 <button class="win-btn menu-item" onclick="abrirModalReporte()">📊 Reportes</button>
             </div>
         </aside>
-
         <!-- MAIN CONTENT -->
         <main class="main-content">
             <div class="win-title-bar" style="margin-bottom: 10px;">
                 <div class="win-title-text">🥖 Registro de Ventas - Panadería</div>
                 <div id="fecha" style="font-size: 0.9rem;"></div>
             </div>
-
             <div class="tpv-grid">
                 <!-- Products Panel -->
                 <section class="products-panel">
                     <div id="categoriasTabs" class="categorias-tabs"></div>
                     <div id="productosGrid" class="productos-grid win-inset"></div>
                 </section>
-
                 <!-- Cart Panel -->
                 <aside class="cart-panel">
                     <div class="win-window w-100" style="flex: 1; display: flex; flex-direction: column;">
@@ -108,7 +99,6 @@
             </div>
         </main>
     </div>
-
     <!-- MODAL VENTA MANUAL -->
     <div id="modalVentaManual" class="modal hidden">
         <div class="modal-content win-window">
@@ -118,15 +108,36 @@
                     onclick="cerrarModalVentaManual()">X</button>
             </div>
             <div class="win-content">
-                <input type="number" id="montoVentaManual" class="win-input w-100" placeholder="0.00">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                    <button class="win-btn" onclick="seleccionarMetodoVentaManual('tarjeta')">💳 Tarjeta</button>
-                    <button class="win-btn" onclick="seleccionarMetodoVentaManual('efectivo')">💵 Efectivo</button>
+                <div class="modal-flex">
+                    <div style="flex: 1;">
+                        <input type="text" id="montoVentaManual" class="win-input w-100"
+                            style="font-size: 1.5rem; height: 50px; text-align: right;" value="0" readonly>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                            <button class="win-btn" onclick="seleccionarMetodoVentaManual('tarjeta')">💳
+                                Tarjeta</button>
+                            <button class="win-btn" onclick="seleccionarMetodoVentaManual('efectivo')">💵
+                                Efectivo</button>
+                        </div>
+                    </div>
+                    <div class="win-numpad win-outset" id="numpadVentaManual">
+                        <!-- Filled by JS or static -->
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '7')">7</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '8')">8</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '9')">9</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '4')">4</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '5')">5</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '6')">6</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '1')">1</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '2')">2</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '3')">3</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '0')">0</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoVentaManual', '.')">.</button>
+                        <button class="win-btn numpad-btn red" onclick="numpadClear('montoVentaManual')">C</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
     <!-- MODAL PRODUCTOS -->
     <div id="modalProductos" class="modal hidden">
         <div class="modal-content win-window" style="width: 500px;">
@@ -162,7 +173,6 @@
             </div>
         </div>
     </div>
-
     <!-- MODAL RETIRO -->
     <div id="modalRetiro" class="modal hidden">
         <div class="modal-content win-window">
@@ -172,14 +182,34 @@
                     onclick="cerrarModalRetiro()">X</button>
             </div>
             <div class="win-content">
-                <input type="number" id="montoRetiro" class="win-input w-100" placeholder="0.00">
-                <textarea id="justificacionRetiro" class="win-input w-100" style="height: 60px; margin-top: 10px;"
-                    placeholder="Justificación"></textarea>
-                <button class="win-btn w-100 mt-10" onclick="confirmarRetiro()">Confirmar Retiro</button>
+                <div class="modal-flex">
+                    <div style="flex: 1;">
+                        <input type="text" id="montoRetiro" class="win-input w-100"
+                            style="font-size: 1.5rem; height: 50px; text-align: right;" value="0" readonly>
+                        <div id="quickOpsRetiro" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;">
+                        </div>
+                        <textarea id="justificacionRetiro" class="win-input w-100"
+                            style="height: 60px; margin-top: 10px;" placeholder="Justificación"></textarea>
+                        <button class="win-btn w-100 mt-10" onclick="confirmarRetiro()">Confirmar Retiro</button>
+                    </div>
+                    <div class="win-numpad win-outset">
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '7')">7</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '8')">8</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '9')">9</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '4')">4</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '5')">5</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '6')">6</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '1')">1</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '2')">2</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '3')">3</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '0')">0</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoRetiro', '.')">.</button>
+                        <button class="win-btn numpad-btn red" onclick="numpadClear('montoRetiro')">C</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
     <!-- MODAL INGRESO -->
     <div id="modalIngreso" class="modal hidden">
         <div class="modal-content win-window">
@@ -189,14 +219,34 @@
                     onclick="cerrarModalIngreso()">X</button>
             </div>
             <div class="win-content">
-                <input type="number" id="montoIngreso" class="win-input w-100" placeholder="0.00">
-                <textarea id="conceptoIngreso" class="win-input w-100" style="height: 60px; margin-top: 10px;"
-                    placeholder="Concepto"></textarea>
-                <button class="win-btn w-100 mt-10" onclick="confirmarIngreso()">Confirmar Ingreso</button>
+                <div class="modal-flex">
+                    <div style="flex: 1;">
+                        <input type="text" id="montoIngreso" class="win-input w-100"
+                            style="font-size: 1.5rem; height: 50px; text-align: right;" value="0" readonly>
+                        <div id="quickOpsIngreso" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px;">
+                        </div>
+                        <textarea id="conceptoIngreso" class="win-input w-100" style="height: 60px; margin-top: 10px;"
+                            placeholder="Concepto"></textarea>
+                        <button class="win-btn w-100 mt-10" onclick="confirmarIngreso()">Confirmar Ingreso</button>
+                    </div>
+                    <div class="win-numpad win-outset">
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '7')">7</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '8')">8</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '9')">9</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '4')">4</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '5')">5</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '6')">6</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '1')">1</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '2')">2</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '3')">3</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '0')">0</button>
+                        <button class="win-btn numpad-btn" onclick="numpadInput('montoIngreso', '.')">.</button>
+                        <button class="win-btn numpad-btn red" onclick="numpadClear('montoIngreso')">C</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
     <!-- MODAL REPORTE -->
     <div id="modalReporte" class="modal hidden">
         <div class="modal-content win-window" style="width: 400px;">
@@ -211,7 +261,6 @@
                     <span id="reporteFechaModal" style="margin: 0 5px; font-weight: bold;"></span>
                     <button class="win-btn" onclick="cambiarDiaReporte(1)">▶</button>
                 </div>
-
                 <div class="win-window mt-10">
                     <div class="win-content">
                         <table class="win-table">
@@ -246,13 +295,10 @@
                         </table>
                     </div>
                 </div>
-
                 <button class="win-btn w-100 mt-10" onclick="descargarReporte()">📥 Descargar PDF</button>
             </div>
         </div>
     </div>
-
     <script src="app.js"></script>
 </body>
-
 </html>
