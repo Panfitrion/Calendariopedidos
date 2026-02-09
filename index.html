@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="es-MX">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TPV Panadería - Windows 95 Edition</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Supabase and jsPDF -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
+
 <body>
     <!-- Fullscreen Cash View -->
-    <div id="pantallaEfectivo" class="modal hidden">
+    <div id="pantallaEfectivo" class="modal hidden modal-backdrop">
         <div class="modal-content win-window">
             <div class="win-title-bar">
                 <div class="win-title-text">💵 Cobro en Efectivo</div>
@@ -26,6 +28,7 @@
                         Cambio: $<span id="pantallaEfectivoCambio">0.00</span>
                     </div>
                 </div>
+
                 <div class="billetes-grid"
                     style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
                     <!-- Dynamically filled -->
@@ -34,6 +37,7 @@
                     style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
                     <!-- Dynamically filled -->
                 </div>
+
                 <div style="display: flex; gap: 10px;">
                     <button class="win-btn w-100" onclick="pantallaEfectivoReset()">Limpiar</button>
                     <button class="win-btn w-100" style="background: #28a745; color: white;"
@@ -43,6 +47,7 @@
             </div>
         </div>
     </div>
+
     <div class="app-wrapper">
         <!-- SIDEBAR -->
         <aside class="sidebar">
@@ -55,23 +60,27 @@
                 <button class="win-btn menu-item" onclick="abrirModalVentaManual()">💸 Venta Manual</button>
                 <button class="win-btn menu-item" onclick="abrirModalRetiro()">💶 Retirar Efectivo</button>
                 <button class="win-btn menu-item" onclick="abrirModalIngreso()">💵 Ingresar Efectivo</button>
+
                 <div class="win-label">Administración</div>
                 <button class="win-btn menu-item" onclick="abrirModalProductos()">📦 Catálogo</button>
                 <button class="win-btn menu-item" onclick="abrirModalReporte()">📊 Reportes</button>
             </div>
         </aside>
+
         <!-- MAIN CONTENT -->
         <main class="main-content">
             <div class="win-title-bar" style="margin-bottom: 10px;">
                 <div class="win-title-text">🥖 Registro de Ventas - Panadería</div>
                 <div id="fecha" style="font-size: 0.9rem;"></div>
             </div>
+
             <div class="tpv-grid">
                 <!-- Products Panel -->
                 <section class="products-panel">
                     <div id="categoriasTabs" class="categorias-tabs"></div>
                     <div id="productosGrid" class="productos-grid win-inset"></div>
                 </section>
+
                 <!-- Cart Panel -->
                 <aside class="cart-panel">
                     <div class="win-window w-100" style="flex: 1; display: flex; flex-direction: column;">
@@ -99,8 +108,9 @@
             </div>
         </main>
     </div>
+
     <!-- MODAL VENTA MANUAL -->
-    <div id="modalVentaManual" class="modal hidden">
+    <div id="modalVentaManual" class="modal hidden modal-backdrop">
         <div class="modal-content win-window">
             <div class="win-title-bar">
                 <div class="win-title-text">💰 Venta Manual</div>
@@ -138,8 +148,9 @@
             </div>
         </div>
     </div>
+
     <!-- MODAL PRODUCTOS -->
-    <div id="modalProductos" class="modal hidden">
+    <div id="modalProductos" class="modal hidden modal-backdrop">
         <div class="modal-content win-window" style="width: 500px;">
             <div class="win-title-bar">
                 <div class="win-title-text">📦 Catálogo de Productos</div>
@@ -173,8 +184,9 @@
             </div>
         </div>
     </div>
+
     <!-- MODAL RETIRO -->
-    <div id="modalRetiro" class="modal hidden">
+    <div id="modalRetiro" class="modal hidden modal-backdrop">
         <div class="modal-content win-window">
             <div class="win-title-bar">
                 <div class="win-title-text">💶 Retirar Efectivo</div>
@@ -210,8 +222,9 @@
             </div>
         </div>
     </div>
+
     <!-- MODAL INGRESO -->
-    <div id="modalIngreso" class="modal hidden">
+    <div id="modalIngreso" class="modal hidden modal-backdrop">
         <div class="modal-content win-window">
             <div class="win-title-bar">
                 <div class="win-title-text">💵 Ingresar Efectivo</div>
@@ -247,9 +260,10 @@
             </div>
         </div>
     </div>
+
     <!-- MODAL REPORTE -->
-    <div id="modalReporte" class="modal hidden">
-        <div class="modal-content win-window" style="width: 400px;">
+    <div id="modalReporte" class="modal hidden modal-backdrop">
+        <div class="modal-content win-window" style="width: 650px; max-height: 80vh; overflow-y: auto;">
             <div class="win-title-bar">
                 <div class="win-title-text">📊 Reporte Diario</div>
                 <button class="win-btn" style="min-height: 15px; padding: 2px 6px;"
@@ -261,6 +275,7 @@
                     <span id="reporteFechaModal" style="margin: 0 5px; font-weight: bold;"></span>
                     <button class="win-btn" onclick="cambiarDiaReporte(1)">▶</button>
                 </div>
+
                 <div class="win-window mt-10">
                     <div class="win-content">
                         <table class="win-table">
@@ -280,6 +295,41 @@
                                 <td>Transacciones:</td>
                                 <td id="reporteNumTransacciones" style="text-align:right">0</td>
                             </tr>
+                            <tr>
+                                <td>Ticket Promedio:</td>
+                                <td id="reporteTicketPromedio" style="text-align:right">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Productos Vendidos:</td>
+                                <td id="reporteProductosVendidos" style="text-align:right">0</td>
+                            </tr>
+                            <tr>
+                                <td>Producto Más Vendido:</td>
+                                <td id="reporteProductoMasVendido" style="text-align:right">-</td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <div style="margin-top:8px;">
+                                        <strong>Top 3 Productos:</strong>
+                                        <table id="tablaTopProductos" class="win-table" style="width:100%; font-size:0.95em; margin-top:4px;">
+                                            <thead><tr><th>Producto</th><th>Cantidad</th></tr></thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>% Efectivo / Tarjeta:</td>
+                                <td id="reportePorcentajeMetodos" style="text-align:right">0% / 0%</td>
+                            </tr>
+                            <tr>
+                                <td>Primera Venta:</td>
+                                <td id="reportePrimeraVenta" style="text-align:right">-</td>
+                            </tr>
+                            <tr>
+                                <td>Última Venta:</td>
+                                <td id="reporteUltimaVenta" style="text-align:right">-</td>
+                            </tr>
                             <tr style="border-top: 1px solid #888;">
                                 <td>Ingresos Extra:</td>
                                 <td id="reporteTotalIngresos" style="text-align:right">$0.00</td>
@@ -293,12 +343,56 @@
                                 <td id="reporteSaldoCaja" style="text-align:right">$0.00</td>
                             </tr>
                         </table>
+                        <div class="win-window mt-10">
+                            <div class="win-content">
+                                <strong>Ventas por Hora:</strong>
+                                <table id="tablaVentasPorHora" class="win-table" style="width:100%; font-size:0.95em; margin-top:4px;">
+                                    <thead><tr><th>Hora</th><th>Monto</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                                <div id="reporteVentasPorHoraGrafica" style="margin-top:8px;"></div>
+                            </div>
+                        </div>
+                        <div class="win-window mt-10">
+                            <div class="win-content">
+                                <strong>Detalle de Retiros:</strong>
+                                <div id="reporteDetalleRetiros" style="font-size: 0.95em; margin-top: 5px;"></div>
+                                <strong>Detalle de Ingresos:</strong>
+                                <div id="reporteDetalleIngresos" style="font-size: 0.95em; margin-top: 5px;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
                 <button class="win-btn w-100 mt-10" onclick="descargarReporte()">📥 Descargar PDF</button>
             </div>
         </div>
     </div>
+
     <script src="app.js"></script>
+    <script>
+    // Permitir cerrar modales al hacer clic fuera del contenido
+    document.addEventListener('DOMContentLoaded', function() {
+        const modales = [
+            { id: 'pantallaEfectivo', close: window.pantallaEfectivoCancelar || function() { document.getElementById('pantallaEfectivo').classList.add('hidden'); } },
+            { id: 'modalVentaManual', close: window.cerrarModalVentaManual },
+            { id: 'modalProductos', close: window.cerrarModalProductos },
+            { id: 'modalRetiro', close: window.cerrarModalRetiro },
+            { id: 'modalIngreso', close: window.cerrarModalIngreso },
+            { id: 'modalReporte', close: window.cerrarModalReporte }
+        ];
+        modales.forEach(({id, close}) => {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.addEventListener('mousedown', function(e) {
+                    if (e.target === modal) {
+                        close();
+                    }
+                });
+            }
+        });
+    });
+    </script>
 </body>
+
 </html>
