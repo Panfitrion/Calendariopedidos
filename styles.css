@@ -1,3 +1,132 @@
+/* --- WIN95 LOOK & FEEL ENHANCEMENTS --- */
+.win-window, .win-inset, .win-outset, .win-btn, .win-table, .modal-content {
+    box-shadow: 2px 2px 0 #808080, 4px 4px 0 #fff, 6px 6px 0 #808080;
+    border-radius: 0 !important;
+}
+.win-title-bar {
+    border-top: 2px solid #fff;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #000;
+    border-right: 2px solid #000;
+    font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    letter-spacing: 0.5px;
+    text-shadow: 1px 1px 0 #000, 0 1px 0 #000;
+}
+.win-btn {
+    font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(180deg, #e0e0e0 0%, #c0c0c0 100%);
+    color: #222;
+    border-width: 2px;
+    border-style: solid;
+    border-color: #fff #808080 #808080 #fff;
+    box-shadow: 1px 1px 0 #000;
+    border-radius: 0;
+    transition: none;
+}
+.win-btn:active {
+    border-color: #808080 #fff #fff #808080;
+    background: linear-gradient(180deg, #c0c0c0 0%, #e0e0e0 100%);
+    color: #000;
+}
+.win-table {
+    font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border-radius: 0;
+    border: 2px solid #000;
+    background: #fff;
+}
+.win-table th, .win-table td {
+    border-radius: 0 !important;
+}
+.win-inset {
+    background: #f8f8f8;
+    border-width: 2px;
+    border-style: solid;
+    border-color: #808080 #fff #fff #808080;
+}
+.win-outset {
+    background: #e0e0e0;
+    border-width: 2px;
+    border-style: solid;
+    border-color: #fff #808080 #808080 #fff;
+}
+.modal-content {
+    border: 2px solid #000;
+    background: #c0c0c0;
+}
+/* Mejorar tabla principal del reporte para uniformidad visual */
+#modalReporte .win-table:first-of-type th,
+#modalReporte .win-table:first-of-type td {
+    text-align: center;
+    padding: 7px 10px;
+    border: 1px solid #d0d0d0;
+}
+#modalReporte .win-table:first-of-type tr {
+    background: #f8f8f8;
+}
+#modalReporte .win-table:first-of-type tr:nth-child(even) {
+    background: #fff;
+}
+#modalReporte .win-table:first-of-type th {
+    background: #e0e0e0;
+    font-weight: bold;
+    border-bottom: 2px solid #b0b0b0;
+}
+/* --- Reporte visual: tablas y gráfica --- */
+#modalReporte .win-table {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+#modalReporte .win-table th, #modalReporte .win-table td {
+    padding: 6px 8px;
+    text-align: center;
+}
+#modalReporte .win-table th {
+    background: #e0e0e0;
+    font-weight: bold;
+    border-bottom: 2px solid #b0b0b0;
+}
+#modalReporte .win-table tbody tr:nth-child(even) {
+    background: #f8f8f8;
+}
+#modalReporte .win-table tbody tr:nth-child(odd) {
+    background: #fff;
+}
+#modalReporte .win-table td {
+    border: 1px solid #d0d0d0;
+}
+#modalReporte .win-content strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #333;
+}
+#reporteVentasPorHoraGrafica {
+    margin: 10px 0 0 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e0e0e0;
+}
+/* Fondo de modal para permitir cierre al hacer clic fuera */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.15);
+}
+.modal-backdrop .modal-content {
+    z-index: 1001;
+    cursor: auto;
+}
+.modal-backdrop {
+    cursor: pointer;
+}
+.modal-backdrop .modal-content {
+    cursor: default;
+}
 :root {
     --win-bg: #c0c0c0;
     --win-border-light: #dfdfdf;
@@ -7,11 +136,13 @@
     --win-blue: #000080;
     --win-blue-light: #1084d0;
 }
+
 * {
     box-sizing: border-box;
     font-family: 'Segoe UI', 'Tahoma', sans-serif;
     -webkit-font-smoothing: antialiased;
 }
+
 body {
     background-color: #008080;
     margin: 0;
@@ -20,17 +151,20 @@ body {
     font-size: 14px;
     overflow: hidden;
 }
+
 /* EFECTO 3D DE BORDES (REGLA DE ORO WIN95) */
 .win-outset {
     border: 2px solid;
     border-color: var(--win-border-white) var(--win-border-dark) var(--win-border-dark) var(--win-border-white);
     box-shadow: 1px 1px 0 0 var(--win-border-black);
 }
+
 .win-inset {
     border: 2px solid;
     border-color: var(--win-border-dark) var(--win-border-white) var(--win-border-white) var(--win-border-dark);
     background: #ffffff;
 }
+
 /* CONTENEDOR PRINCIPAL */
 .app-wrapper {
     display: flex;
@@ -39,6 +173,7 @@ body {
     background: var(--win-bg);
     padding: 4px;
 }
+
 /* BOTONES ESTILO WIN95 */
 .win-btn {
     background: var(--win-bg);
@@ -56,11 +191,13 @@ body {
     justify-content: center;
     gap: 8px;
 }
+
 .win-btn:active {
     border-color: var(--win-border-dark) var(--win-border-white) var(--win-border-white) var(--win-border-dark);
     outline: 1px dotted var(--win-border-black);
     padding: 9px 15px 7px 17px;
 }
+
 /* BARRA DE TÍTULO */
 .win-title-bar {
     background: linear-gradient(90deg, var(--win-blue), var(--win-blue-light));
@@ -72,11 +209,13 @@ body {
     font-weight: bold;
     font-size: 1.1rem;
 }
+
 .win-title-text {
     display: flex;
     align-items: center;
     gap: 8px;
 }
+
 /* TABLAS */
 .win-table {
     width: 100%;
@@ -84,6 +223,7 @@ body {
     background: white;
     font-size: 15px;
 }
+
 .win-table th {
     background: var(--win-bg);
     border: 2px solid;
@@ -92,10 +232,12 @@ body {
     font-weight: normal;
     text-align: left;
 }
+
 .win-table td {
     border: 1px solid #d0d0d0;
     padding: 10px;
 }
+
 /* WINDOWS / CARDS */
 .win-window {
     background: var(--win-bg);
@@ -105,9 +247,11 @@ body {
     padding: 4px;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
 }
+
 .win-content {
     padding: 15px;
 }
+
 /* INPUTS */
 .win-input {
     border: 2px solid;
@@ -117,6 +261,7 @@ body {
     background: #fff;
     height: 38px;
 }
+
 /* SIDEBAR */
 .sidebar {
     width: 260px;
@@ -126,10 +271,12 @@ body {
     display: flex;
     flex-direction: column;
 }
+
 .sidebar-menu {
     flex: 1;
     overflow-y: auto;
 }
+
 .win-label {
     margin-top: 15px;
     margin-bottom: 5px;
@@ -137,13 +284,17 @@ body {
     color: #444;
     padding-left: 4px;
 }
+
 .menu-item {
     width: 100%;
     text-align: left;
     margin-bottom: 8px;
     padding: 10px 15px;
     display: block;
+    color: black;
+    font-weight: bold;
 }
+
 .menu-item.active {
     background: var(--win-blue);
     color: white;
@@ -151,6 +302,7 @@ body {
     border-color: var(--win-border-dark) var(--win-border-white) var(--win-border-white) var(--win-border-dark);
     outline: none;
 }
+
 /* MAIN CONTENT */
 .main-content {
     flex: 1;
@@ -158,6 +310,7 @@ body {
     overflow-y: auto;
     background: #008080;
 }
+
 /* TPV SPECIFIC LAYOUT */
 .tpv-grid {
     display: grid;
@@ -165,22 +318,26 @@ body {
     gap: 15px;
     height: calc(100vh - 40px);
 }
+
 .products-panel {
     display: flex;
     flex-direction: column;
     height: 100%;
 }
+
 .cart-panel {
     display: flex;
     flex-direction: column;
     height: 100%;
 }
+
 .categorias-tabs {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
     margin-bottom: 10px;
 }
+
 .categoria-tab {
     background: var(--win-bg);
     border: 2px solid;
@@ -188,11 +345,13 @@ body {
     padding: 6px 12px;
     cursor: pointer;
 }
+
 .categoria-tab.active {
     font-weight: bold;
     background: #fff;
     border-color: var(--win-border-dark) var(--win-border-white) var(--win-border-white) var(--win-border-dark);
 }
+
 .productos-grid {
     flex: 1;
     overflow-y: auto;
@@ -205,11 +364,13 @@ body {
     background: #e0e0e0;
     /* Changed background for better contrast */
 }
+
 .subcategoria-header {
     grid-column: 1 / -1;
     padding: 2px 8px;
-    background: #dcdcdc;
-    border-left: 4px solid var(--win-blue);
+    background: var(--win-border-dark);
+    border: 2px solid;
+    border-color: var(--win-border-white) var(--win-border-dark) var(--win-border-dark) var(--win-border-white);
     font-weight: bold;
     text-align: center;
     /* Center the text */
@@ -217,8 +378,9 @@ body {
     margin-bottom: -6px;
     /* Tighten gap to products */
     font-size: 0.9rem;
-    color: #333;
+    color: white;
 }
+
 .producto-card {
     background: var(--win-bg);
     border: 2px solid;
@@ -230,23 +392,28 @@ body {
     flex-direction: column;
     justify-content: center;
     height: 80px;
+    font-weight: bold;
     /* Rectangular aspect */
 }
+
 .producto-card:active {
     border-color: var(--win-border-dark) var(--win-border-white) var(--win-border-white) var(--win-border-dark);
 }
+
 .carrito-items {
     flex: 1;
     overflow-y: auto;
     background: #fff;
     border: 2px solid var(--win-border-dark);
 }
+
 .carrito-item {
     padding: 8px;
     border-bottom: 1px solid #eee;
     display: flex;
     justify-content: space-between;
 }
+
 /* MODALS */
 .modal {
     display: none;
@@ -260,33 +427,41 @@ body {
     justify-content: center;
     align-items: center;
 }
+
 .modal.hidden {
     display: none;
 }
+
 .modal:not(.hidden) {
     display: flex;
 }
+
 .modal-content {
     background: var(--win-bg);
     min-width: 300px;
     max-width: 90%;
 }
+
 /* UTILITIES */
 .w-100 {
     width: 100%;
 }
+
 .mt-10 {
     margin-top: 10px;
 }
+
 .hidden {
     display: none !important;
 }
+
 /* FEEDBACK */
 #notificacion-container {
     margin-top: auto;
     min-height: 40px;
     padding: 5px;
 }
+
 .notificacion {
     padding: 8px;
     background: #ffffcc;
@@ -295,19 +470,23 @@ body {
     margin-bottom: 4px;
     animation: fadeIn 0.3s;
 }
+
 .notificacion.error {
     background: #ffcccc;
 }
+
 @keyframes fadeIn {
     from {
         opacity: 0;
         transform: translateY(5px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
+
 /* NUMPAD */
 .win-numpad {
     display: grid;
@@ -322,22 +501,27 @@ body {
     margin-left: auto;
     margin-right: auto;
 }
+
 .numpad-btn {
     height: 50px;
     font-size: 1.2rem;
     font-weight: bold;
 }
+
 .numpad-btn.wide {
     grid-column: span 2;
 }
+
 .numpad-btn.red {
     color: #a00;
 }
+
 .modal-flex {
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
+
 @media (min-width: 600px) {
     .modal-flex {
         flex-direction: row;
